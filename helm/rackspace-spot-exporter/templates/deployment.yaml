@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "rackspace-spot-exporter.fullname" . }}
+  labels:
+    {{- include "rackspace-spot-exporter.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "rackspace-spot-exporter.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "rackspace-spot-exporter.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "rackspace-spot-exporter.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+      - name: {{ .Chart.Name }}
+        securityContext:
+          {{- toYaml .Values.securityContext | nindent 12 }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - name: http
+          containerPort: {{ .Values.exporter.port }}
+          protocol: TCP
+        env:
+        - name: RACKSPACE_NAMESPACE
+          value: {{ .Values.rackspaceSpot.namespace | required "rackspaceSpot.namespace is required" | quote }}
+        - name: RACKSPACE_REFRESH_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "rackspace-spot-exporter.secretName" . }}
+              key: refresh-token
+        {{- if .Values.rackspaceSpot.apiUrl }}
+        - name: RACKSPACE_API_URL
+          value: {{ .Values.rackspaceSpot.apiUrl | quote }}
+        {{- end }}
+        {{- if .Values.rackspaceSpot.authUrl }}
+        - name: RACKSPACE_AUTH_URL
+          value: {{ .Values.rackspaceSpot.authUrl | quote }}
+        {{- end }}
+        - name: PORT
+          value: {{ .Values.exporter.port | quote }}
+        - name: METRICS_PATH
+          value: {{ .Values.exporter.metricsPath | quote }}
+        - name: SCRAPE_INTERVAL
+          value: {{ .Values.exporter.scrapeInterval | quote }}
+        livenessProbe:
+          {{- toYaml .Values.livenessProbe | nindent 12 }}
+        readinessProbe:
+          {{- toYaml .Values.readinessProbe | nindent 12 }}
+        resources:
+          {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

@@ -1,0 +1,17 @@
+apiVersion: v2
+name: rackspace-spot-exporter
+description: A Prometheus exporter for Rackspace Spot metrics
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - prometheus
+  - exporter
+  - rackspace
+  - spot
+  - monitoring
+maintainers:
+  - name: Rackspace Spot Team
+home: https://github.com/pm990320/rackspace-spot-exporter
+sources:
+  - https://github.com/pm990320/rackspace-spot-exporter
