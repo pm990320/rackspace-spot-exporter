@@ -19,10 +19,8 @@ COPY --from=prerelease /app/index.ts .
 COPY --from=prerelease /app/src ./src
 COPY --from=prerelease /app/package.json .
 
-# Create a non-root user
-RUN addgroup --system --gid 1001 exporter && \
-    adduser --system --uid 1001 exporter
-USER exporter
+# Run as non-root user (bun image includes a 'bun' user)
+USER bun
 
 # Expose the default port
 EXPOSE 9090
