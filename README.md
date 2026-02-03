@@ -73,22 +73,40 @@ docker run -d \
 
 ### Kubernetes (Helm)
 
-1. Create a secret with your refresh token:
+#### Install from OCI Registry (recommended)
+
 ```bash
+# Create a secret with your refresh token
 kubectl create secret generic rackspace-spot-credentials \
   --from-literal=refresh-token=your-refresh-token
+
+# Install from GHCR OCI registry
+helm install rackspace-spot-exporter \
+  oci://ghcr.io/pm990320/charts/rackspace-spot-exporter \
+  --version 0.1.0 \
+  --set rackspaceSpot.namespace=org-xxxxx \
+  --set rackspaceSpot.existingSecret=rackspace-spot-credentials
 ```
 
-2. Install the Helm chart:
+#### Install from local chart
+
 ```bash
+# Create a secret with your refresh token
+kubectl create secret generic rackspace-spot-credentials \
+  --from-literal=refresh-token=your-refresh-token
+
+# Install from local chart
 helm install rackspace-spot-exporter ./helm/rackspace-spot-exporter \
   --set rackspaceSpot.namespace=org-xxxxx \
   --set rackspaceSpot.existingSecret=rackspace-spot-credentials
 ```
 
-3. Enable ServiceMonitor for Prometheus Operator:
+#### Enable ServiceMonitor for Prometheus Operator
+
 ```bash
-helm install rackspace-spot-exporter ./helm/rackspace-spot-exporter \
+helm install rackspace-spot-exporter \
+  oci://ghcr.io/pm990320/charts/rackspace-spot-exporter \
+  --version 0.1.0 \
   --set rackspaceSpot.namespace=org-xxxxx \
   --set rackspaceSpot.existingSecret=rackspace-spot-credentials \
   --set serviceMonitor.enabled=true \
