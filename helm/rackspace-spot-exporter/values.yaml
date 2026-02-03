@@ -1,0 +1,143 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/pm990320/rackspace-spot-exporter
+  pullPolicy: IfNotPresent
+  tag: ""  # Overrides the image tag whose default is the chart appVersion.
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+# Rackspace Spot API configuration
+rackspaceSpot:
+  # API Base URL (optional, defaults to https://spot.rackspace.com)
+  apiUrl: ""
+
+  # Auth Base URL (optional, defaults to https://login.spot.rackspace.com)
+  authUrl: ""
+
+  # Organization namespace to monitor (required, e.g., org-xxxxx)
+  namespace: ""
+
+  # OAuth refresh token (required)
+  # Get this from Rackspace Spot console
+  refreshToken: ""
+
+  # Use an existing secret for the refresh token
+  # The secret should contain a key named 'refresh-token'
+  existingSecret: ""
+
+# Exporter configuration
+exporter:
+  # Port to expose metrics on
+  port: 9090
+
+  # Metrics path
+  metricsPath: /metrics
+
+  # How often to scrape the Rackspace API (in seconds)
+  scrapeInterval: 60
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "9090"
+  prometheus.io/path: "/metrics"
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+  fsGroup: 1001
+
+securityContext:
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: true
+  allowPrivilegeEscalation: false
+
+service:
+  type: ClusterIP
+  port: 9090
+  targetPort: 9090
+  annotations: {}
+
+# Prometheus Operator ServiceMonitor
+serviceMonitor:
+  enabled: false
+  interval: 60s
+  scrapeTimeout: 30s
+  labels: {}
+  annotations: {}
+  # Additional metric relabeling
+  relabelings: []
+  # Additional target relabeling
+  targetLabels: []
+
+# Prometheus Operator PodMonitor (alternative to ServiceMonitor)
+podMonitor:
+  enabled: false
+  interval: 60s
+  scrapeTimeout: 30s
+  labels: {}
+  annotations: {}
+
+# Prometheus rules for alerting
+prometheusRule:
+  enabled: false
+  labels: {}
+  annotations: {}
+  rules: []
+  # Example rules:
+  # - alert: RackspaceSpotExporterDown
+  #   expr: up{job="rackspace-spot-exporter"} == 0
+  #   for: 5m
+  #   labels:
+  #     severity: critical
+  #   annotations:
+  #     summary: "Rackspace Spot Exporter is down"
+  #     description: "Rackspace Spot Exporter has been down for more than 5 minutes."
+
+resources:
+  limits:
+    cpu: 200m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# Liveness and readiness probes
+livenessProbe:
+  httpGet:
+    path: /health
+    port: http
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /ready
+    port: http
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 3

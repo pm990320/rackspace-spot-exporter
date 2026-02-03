@@ -1,0 +1,24 @@
+{
+  "name": "rackspace-spot-exporter",
+  "version": "0.1.0",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "bun run index.ts",
+    "dev": "bun run --watch index.ts",
+    "generate-types": "bunx openapi-typescript openapi.yaml -o src/api-types.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "openapi-typescript": "^7.9.1"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "openapi-fetch": "^0.14.1",
+    "prom-client": "^15.1.3"
+  }
+}
