@@ -7,17 +7,17 @@ const config = {
   refreshToken: process.env.RACKSPACE_REFRESH_TOKEN || '',
   apiBaseUrl: process.env.RACKSPACE_API_URL || undefined, // Uses default: https://spot.rackspace.com
   authBaseUrl: process.env.RACKSPACE_AUTH_URL || undefined, // Uses default: https://login.spot.rackspace.com
-  namespace: process.env.RACKSPACE_NAMESPACE || '',
+  organization: process.env.RACKSPACE_ORGANIZATION || '',
   port: parseInt(process.env.PORT || '9090', 10),
   metricsPath: process.env.METRICS_PATH || '/metrics',
   scrapeInterval: parseInt(process.env.SCRAPE_INTERVAL || '60', 10) * 1000, // Convert to milliseconds
 };
 
 // Validate required configuration
-if (!config.refreshToken || !config.namespace) {
+if (!config.refreshToken || !config.organization) {
   console.error('ERROR: Required environment variables are missing:');
   console.error('  - RACKSPACE_REFRESH_TOKEN');
-  console.error('  - RACKSPACE_NAMESPACE');
+  console.error('  - RACKSPACE_ORGANIZATION (org-xxxxx format)');
   process.exit(1);
 }
 
@@ -32,7 +32,7 @@ const client = new RackspaceSpotClient({
   authBaseUrl: config.authBaseUrl,
 });
 
-const collector = new RackspaceSpotCollector(client, config.namespace, registry);
+const collector = new RackspaceSpotCollector(client, config.organization, registry);
 
 // Background collection loop
 let isCollecting = false;
@@ -90,7 +90,7 @@ const server = Bun.serve({
 <body>
 <h1>Rackspace Spot Exporter</h1>
 <p><a href="${config.metricsPath}">Metrics</a></p>
-<p>Namespace: ${config.namespace}</p>
+<p>Organization: ${config.organization}</p>
 <p>Scrape Interval: ${config.scrapeInterval / 1000}s</p>
 </body>
 </html>`,
@@ -109,5 +109,5 @@ const server = Bun.serve({
 console.log(`Rackspace Spot Exporter started`);
 console.log(`  - Metrics endpoint: http://localhost:${config.port}${config.metricsPath}`);
 console.log(`  - Health endpoint: http://localhost:${config.port}/health`);
-console.log(`  - Namespace: ${config.namespace}`);
+console.log(`  - Organization: ${config.organization}`);
 console.log(`  - Scrape interval: ${config.scrapeInterval / 1000}s`);

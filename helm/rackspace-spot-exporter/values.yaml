@@ -17,8 +17,9 @@ rackspaceSpot:
   # Auth Base URL (optional, defaults to https://login.spot.rackspace.com)
   authUrl: ""
 
-  # Organization namespace to monitor (required, e.g., org-xxxxx)
-  namespace: ""
+  # Organization to monitor (required, e.g., org-xxxxx)
+  # Get this from the Rackspace Spot console under Organizations
+  organization: ""
 
   # OAuth refresh token (required)
   # Get this from Rackspace Spot console

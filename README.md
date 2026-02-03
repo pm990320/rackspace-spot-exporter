@@ -1,150 +1,127 @@
 # Rackspace Spot Exporter
 
-A Prometheus exporter for Rackspace Spot metrics, built with Bun and TypeScript. This exporter collects and exposes metrics about CloudSpaces, SpotNodePools, and OnDemandNodePools for monitoring with Prometheus.
+[![CI](https://github.com/pm990320/rackspace-spot-exporter/actions/workflows/ci.yaml/badge.svg)](https://github.com/pm990320/rackspace-spot-exporter/actions/workflows/ci.yaml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+A Prometheus exporter for [Rackspace Spot](https://spot.rackspace.com) - a managed Kubernetes platform with auction-based pricing.
 
 ## Features
 
-- **CloudSpace Metrics**: Monitor the number of nodes in each cloudspace
-- **SpotNodePool Metrics**: Track desired and won node counts for spot node pools
-- **OnDemandNodePool Metrics**: Monitor desired and reserved node counts for on-demand pools
-- **Prometheus Operator Support**: Includes ServiceMonitor and PodMonitor CRDs
-- **OAuth Authentication**: Secure API access with automatic token refresh
-- **Health & Readiness Probes**: Built-in Kubernetes health checking
+- **CloudSpace Metrics**: Monitor node counts across your Kubernetes clusters
+- **SpotNodePool Metrics**: Track bid status, desired vs. won nodes
+- **OnDemandNodePool Metrics**: Monitor reserved node allocation
+- **Prometheus Operator Support**: ServiceMonitor, PodMonitor, and PrometheusRule CRDs
+- **Helm Chart**: Easy Kubernetes deployment with OCI registry support
 - **Type-Safe**: Full TypeScript implementation with OpenAPI-generated types
 
-## Metrics Exported
+## Prerequisites
 
-### CloudSpace Metrics
-- `rackspace_spot_cloudspace_nodes_total`: Total number of nodes in a cloudspace
-  - Labels: `namespace`, `cloudspace`, `cloudspace_region`
+- A Rackspace Spot account
+- A refresh token from the Rackspace Spot console
 
-### SpotNodePool Metrics
-- `rackspace_spot_spotnodepool_desired`: Desired number of nodes in a spot node pool
-  - Labels: `namespace`, `cloudspace`, `nodepool`, `serverclass`
-- `rackspace_spot_spotnodepool_won_count`: Number of nodes won in a spot node pool
-  - Labels: `namespace`, `cloudspace`, `nodepool`, `serverclass`, `bid_status`
+## Getting Your Refresh Token
 
-### OnDemandNodePool Metrics
-- `rackspace_spot_ondemandnodepool_desired`: Desired number of nodes in an on-demand node pool
-  - Labels: `namespace`, `cloudspace`, `nodepool`, `serverclass`
-- `rackspace_spot_ondemandnodepool_reserved_count`: Number of reserved nodes in an on-demand node pool
-  - Labels: `namespace`, `cloudspace`, `nodepool`, `serverclass`, `reserved_status`
+1. Log in to the [Rackspace Spot Console](https://spot.rackspace.com)
+2. Navigate to **API Access > Terraform** in the sidebar
+3. Click **Get New Token** to generate a refresh token
+4. Copy the token for use with this exporter
 
 ## Quick Start
 
-### Local Development
-
-1. Install dependencies:
-```bash
-bun install
-```
-
-2. Set environment variables:
-```bash
-export RACKSPACE_REFRESH_TOKEN="your-refresh-token"
-export RACKSPACE_NAMESPACE="org-xxxxx"
-```
-
-3. Run the exporter:
-```bash
-bun run start
-```
-
-4. Access metrics:
-```bash
-curl http://localhost:9090/metrics
-```
-
 ### Docker
 
-1. Build the image:
-```bash
-docker build -t rackspace-spot-exporter:latest .
-```
-
-2. Run the container:
 ```bash
 docker run -d \
   -e RACKSPACE_REFRESH_TOKEN="your-refresh-token" \
-  -e RACKSPACE_NAMESPACE="org-xxxxx" \
+  -e RACKSPACE_ORGANIZATION="org-xxxxx" \
   -p 9090:9090 \
-  rackspace-spot-exporter:latest
+  ghcr.io/pm990320/rackspace-spot-exporter:latest
 ```
 
 ### Kubernetes (Helm)
 
-#### Install from OCI Registry (recommended)
-
 ```bash
 # Create a secret with your refresh token
 kubectl create secret generic rackspace-spot-credentials \
   --from-literal=refresh-token=your-refresh-token
 
-# Install from GHCR OCI registry
+# Install from OCI registry
 helm install rackspace-spot-exporter \
   oci://ghcr.io/pm990320/charts/rackspace-spot-exporter \
   --version 0.1.0 \
-  --set rackspaceSpot.namespace=org-xxxxx \
+  --set rackspaceSpot.organization=org-xxxxx \
   --set rackspaceSpot.existingSecret=rackspace-spot-credentials
 ```
 
-#### Install from local chart
+### Local Development
 
 ```bash
-# Create a secret with your refresh token
-kubectl create secret generic rackspace-spot-credentials \
-  --from-literal=refresh-token=your-refresh-token
+# Install dependencies
+bun install
 
-# Install from local chart
-helm install rackspace-spot-exporter ./helm/rackspace-spot-exporter \
-  --set rackspaceSpot.namespace=org-xxxxx \
-  --set rackspaceSpot.existingSecret=rackspace-spot-credentials
-```
+# Set environment variables
+export RACKSPACE_REFRESH_TOKEN="your-refresh-token"
+export RACKSPACE_ORGANIZATION="org-xxxxx"
 
-#### Enable ServiceMonitor for Prometheus Operator
+# Run the exporter
+bun run start
 
-```bash
-helm install rackspace-spot-exporter \
-  oci://ghcr.io/pm990320/charts/rackspace-spot-exporter \
-  --version 0.1.0 \
-  --set rackspaceSpot.namespace=org-xxxxx \
-  --set rackspaceSpot.existingSecret=rackspace-spot-credentials \
-  --set serviceMonitor.enabled=true \
-  --set serviceMonitor.labels.release=prometheus
+# Access metrics
+curl http://localhost:9090/metrics
 ```
 
 ## Configuration
 
 ### Environment Variables
 
-| Variable | Description | Default | Required |
-|----------|-------------|---------|----------|
-| `RACKSPACE_REFRESH_TOKEN` | OAuth Refresh Token from Rackspace Spot console | - | Yes |
-| `RACKSPACE_NAMESPACE` | Organization namespace (org-xxxxx) | - | Yes |
-| `RACKSPACE_API_URL` | Rackspace Spot API URL | `https://spot.rackspace.com` | No |
-| `RACKSPACE_AUTH_URL` | Rackspace OAuth URL | `https://login.spot.rackspace.com` | No |
-| `PORT` | Exporter port | `9090` | No |
-| `METRICS_PATH` | Metrics endpoint path | `/metrics` | No |
-| `SCRAPE_INTERVAL` | How often to scrape the API (seconds) | `60` | No |
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `RACKSPACE_REFRESH_TOKEN` | Yes | - | OAuth refresh token from Rackspace Spot console |
+| `RACKSPACE_ORGANIZATION` | Yes | - | Organization ID (e.g., `org-xxxxx`) |
+| `RACKSPACE_API_URL` | No | `https://spot.rackspace.com` | Rackspace Spot API URL |
+| `RACKSPACE_AUTH_URL` | No | `https://login.spot.rackspace.com` | Rackspace OAuth URL |
+| `PORT` | No | `9090` | Exporter listen port |
+| `METRICS_PATH` | No | `/metrics` | Metrics endpoint path |
+| `SCRAPE_INTERVAL` | No | `60` | API scrape interval (seconds) |
 
 ### Helm Values
 
-See [helm/rackspace-spot-exporter/values.yaml](helm/rackspace-spot-exporter/values.yaml) for all configuration options.
+| Value | Required | Default | Description |
+|-------|----------|---------|-------------|
+| `rackspaceSpot.organization` | Yes | - | Organization ID to monitor |
+| `rackspaceSpot.refreshToken` | Yes* | - | Refresh token (*or use `existingSecret`) |
+| `rackspaceSpot.existingSecret` | No | - | Name of existing secret with `refresh-token` key |
+| `serviceMonitor.enabled` | No | `false` | Enable Prometheus Operator ServiceMonitor |
+| `podMonitor.enabled` | No | `false` | Enable Prometheus Operator PodMonitor |
+| `prometheusRule.enabled` | No | `false` | Enable PrometheusRule for alerting |
 
-Key configuration options:
-- `rackspaceSpot.namespace`: The organization namespace to monitor (required)
-- `rackspaceSpot.refreshToken`: OAuth refresh token (required if not using existingSecret)
-- `rackspaceSpot.existingSecret`: Use an existing secret for the refresh token
-- `serviceMonitor.enabled`: Enable Prometheus Operator ServiceMonitor
-- `podMonitor.enabled`: Enable Prometheus Operator PodMonitor
-- `prometheusRule.enabled`: Enable PrometheusRule for alerting
-- `exporter.scrapeInterval`: How often to scrape the API (in seconds)
+See [values.yaml](helm/rackspace-spot-exporter/values.yaml) for all options.
+
+## Metrics
+
+### CloudSpace Metrics
+
+| Metric | Description | Labels |
+|--------|-------------|--------|
+| `rackspace_spot_cloudspace_nodes_total` | Total nodes in a cloudspace | `namespace`, `cloudspace`, `cloudspace_region` |
+
+### SpotNodePool Metrics
+
+| Metric | Description | Labels |
+|--------|-------------|--------|
+| `rackspace_spot_spotnodepool_desired` | Desired node count | `namespace`, `cloudspace`, `nodepool`, `serverclass` |
+| `rackspace_spot_spotnodepool_won_count` | Nodes won in auction | `namespace`, `cloudspace`, `nodepool`, `serverclass`, `bid_status` |
+
+### OnDemandNodePool Metrics
+
+| Metric | Description | Labels |
+|--------|-------------|--------|
+| `rackspace_spot_ondemandnodepool_desired` | Desired node count | `namespace`, `cloudspace`, `nodepool`, `serverclass` |
+| `rackspace_spot_ondemandnodepool_reserved_count` | Reserved nodes | `namespace`, `cloudspace`, `nodepool`, `serverclass`, `reserved_status` |
 
 ## Prometheus Operator Integration
 
 ### ServiceMonitor
-
-The exporter includes a ServiceMonitor CRD for automatic discovery by Prometheus Operator:
 
 ```yaml
 serviceMonitor:
@@ -155,16 +132,21 @@ serviceMonitor:
     release: prometheus  # Must match your Prometheus Operator release
 ```
 
-### PrometheusRule Example
-
-Enable alerting with PrometheusRule:
+### Example Alerts
 
 ```yaml
 prometheusRule:
   enabled: true
-  labels:
-    release: prometheus
   rules:
+    - alert: SpotNodePoolBelowDesired
+      expr: rackspace_spot_spotnodepool_won_count < rackspace_spot_spotnodepool_desired
+      for: 10m
+      labels:
+        severity: warning
+      annotations:
+        summary: "Spot pool {{ $labels.nodepool }} below capacity"
+        description: "Won {{ $value }} nodes but desired {{ $labels.desired }}"
+
     - alert: RackspaceSpotExporterDown
       expr: up{job="rackspace-spot-exporter"} == 0
       for: 5m
@@ -172,125 +154,74 @@ prometheusRule:
         severity: critical
       annotations:
         summary: "Rackspace Spot Exporter is down"
-        description: "Rackspace Spot Exporter has been down for more than 5 minutes."
-
-    - alert: SpotNodePoolBelowDesired
-      expr: rackspace_spot_spotnodepool_won_count < rackspace_spot_spotnodepool_desired
-      for: 10m
-      labels:
-        severity: warning
-      annotations:
-        summary: "Spot node pool {{ $labels.nodepool }} is below desired capacity"
-        description: "Node pool {{ $labels.nodepool }} has {{ $value }} nodes but desires {{ $labels.desired }}"
-```
-
-## Publishing Docker Images
-
-### Build and Push
-
-```bash
-# Build the image
-docker build -t ghcr.io/pm990320/rackspace-spot-exporter:latest .
-
-# Push to GitHub Container Registry
-docker push ghcr.io/pm990320/rackspace-spot-exporter:latest
-```
-
-### GitHub Actions (CI/CD)
-
-You can automate Docker builds using GitHub Actions. Create `.github/workflows/docker.yaml`:
-
-```yaml
-name: Build and Push Docker Image
-
-on:
-  push:
-    branches: [main]
-    tags: ['v*']
-  pull_request:
-    branches: [main]
-
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Log in to Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=ref,event=branch
-            type=semver,pattern={{version}}
-            type=sha
-
-      - name: Build and push
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
 ```
 
 ## Development
+
+```bash
+# Install dependencies
+bun install
+
+# Run in watch mode
+bun run dev
+
+# Type checking
+bun run typecheck
+
+# Run tests
+bun run test
+
+# Run tests with coverage
+bun run test:coverage
+
+# Regenerate API types from OpenAPI spec
+bun run generate-types
+```
 
 ### Project Structure
 
 ```
 rackspace-spot-exporter/
-├── index.ts                  # Main server and metrics collection
+├── index.ts              # Main server entry point
 ├── src/
-│   ├── api-client.ts        # Rackspace Spot API client (openapi-fetch)
-│   ├── api-types.ts         # Generated TypeScript types from OpenAPI spec
-│   └── collector.ts         # Metrics collector
-├── openapi.yaml             # Rackspace Spot OpenAPI specification
-├── Dockerfile               # Container image definition
-└── helm/                    # Helm chart for Kubernetes deployment
-    └── rackspace-spot-exporter/
-        ├── Chart.yaml
-        ├── values.yaml
-        └── templates/
+│   ├── api-client.ts     # Type-safe Rackspace Spot API client
+│   ├── api-types.ts      # Generated OpenAPI types
+│   └── collector.ts      # Prometheus metrics collector
+├── tests/                # Unit and integration tests
+├── helm/                 # Helm chart
+│   └── rackspace-spot-exporter/
+└── openapi.yaml          # Rackspace Spot OpenAPI spec
 ```
 
-### Regenerate OpenAPI Types
+### Testing
 
-If the API spec changes:
+The project includes comprehensive tests:
+
+- **Unit Tests**: Test API client and collector with mocked responses
+- **Helm Tests**: Validate chart templating and required values
 
 ```bash
-bun run generate-types
+bun run test           # Run all tests
+bun run test:watch     # Watch mode
+bun run test:coverage  # With coverage report
 ```
 
-### Scripts
+## Architecture
 
-```bash
-bun run start           # Start the exporter
-bun run dev             # Start with watch mode
-bun run generate-types  # Regenerate types from OpenAPI spec
-bun run typecheck       # Run TypeScript type checking
-```
+This exporter uses a type-safe approach:
+
+1. **Generated Types**: TypeScript types auto-generated from the official Rackspace Spot OpenAPI 3.0 spec using `openapi-typescript`
+2. **Type-Safe Client**: The `openapi-fetch` library provides compile-time type checking for API calls
+3. **Prometheus Client**: Uses `prom-client` for metric collection and exposition
+
+## Releasing
+
+See [RELEASING.md](RELEASING.md) for release process documentation.
 
 ## License
 
 MIT
 
-## Contributing
+## Disclaimer
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+This is a third-party, community-maintained exporter and is not officially published or supported by Rackspace Technology.

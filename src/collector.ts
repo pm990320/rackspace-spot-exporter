@@ -9,7 +9,7 @@ type OnDemandNodePool = components['schemas']['io.rxt.ngpc.v1.OnDemandNodePool']
 export class RackspaceSpotCollector {
   private client: RackspaceSpotClient;
   private registry: Registry;
-  private namespace: string;
+  private organization: string;
 
   // CloudSpace metrics
   private cloudspaceNodesGauge: Gauge;
@@ -22,9 +22,9 @@ export class RackspaceSpotCollector {
   private onDemandNodePoolDesiredGauge: Gauge;
   private onDemandNodePoolReservedCountGauge: Gauge;
 
-  constructor(client: RackspaceSpotClient, namespace: string, registry?: Registry) {
+  constructor(client: RackspaceSpotClient, organization: string, registry?: Registry) {
     this.client = client;
-    this.namespace = namespace;
+    this.organization = organization;
     this.registry = registry || new Registry();
 
     // Initialize metrics
@@ -78,7 +78,7 @@ export class RackspaceSpotCollector {
   }
 
   private async collectCloudSpaceMetrics(): Promise<void> {
-    const cloudSpaces = await this.client.listCloudSpaces(this.namespace);
+    const cloudSpaces = await this.client.listCloudSpaces(this.organization);
 
     if (!cloudSpaces?.items) {
       return;
@@ -92,7 +92,7 @@ export class RackspaceSpotCollector {
 
       this.cloudspaceNodesGauge.set(
         {
-          namespace: this.namespace,
+          namespace: this.organization,
           cloudspace: name,
           cloudspace_region: region,
         },
@@ -102,7 +102,7 @@ export class RackspaceSpotCollector {
   }
 
   private async collectSpotNodePoolMetrics(): Promise<void> {
-    const spotNodePools = await this.client.listSpotNodePools(this.namespace);
+    const spotNodePools = await this.client.listSpotNodePools(this.organization);
 
     if (!spotNodePools?.items) {
       return;
@@ -119,7 +119,7 @@ export class RackspaceSpotCollector {
       // Set desired count
       this.spotNodePoolDesiredGauge.set(
         {
-          namespace: this.namespace,
+          namespace: this.organization,
           cloudspace: cloudSpace,
           nodepool: name,
           serverclass: serverClass,
@@ -130,7 +130,7 @@ export class RackspaceSpotCollector {
       // Set won count
       this.spotNodePoolWonCountGauge.set(
         {
-          namespace: this.namespace,
+          namespace: this.organization,
           cloudspace: cloudSpace,
           nodepool: name,
           serverclass: serverClass,
@@ -142,7 +142,7 @@ export class RackspaceSpotCollector {
   }
 
   private async collectOnDemandNodePoolMetrics(): Promise<void> {
-    const onDemandNodePools = await this.client.listOnDemandNodePools(this.namespace);
+    const onDemandNodePools = await this.client.listOnDemandNodePools(this.organization);
 
     if (!onDemandNodePools?.items) {
       return;
@@ -159,7 +159,7 @@ export class RackspaceSpotCollector {
       // Set desired count
       this.onDemandNodePoolDesiredGauge.set(
         {
-          namespace: this.namespace,
+          namespace: this.organization,
           cloudspace: cloudSpace,
           nodepool: name,
           serverclass: serverClass,
@@ -170,7 +170,7 @@ export class RackspaceSpotCollector {
       // Set reserved count
       this.onDemandNodePoolReservedCountGauge.set(
         {
-          namespace: this.namespace,
+          namespace: this.organization,
           cloudspace: cloudSpace,
           nodepool: name,
           serverclass: serverClass,
