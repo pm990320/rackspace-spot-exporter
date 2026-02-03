@@ -34,7 +34,7 @@ This prevents deletion or modification of release tags once pushed.
 3. Enable:
    - ✅ Require a pull request before merging
    - ✅ Require status checks to pass before merging
-     - Add required checks: `typecheck`, `docker-build`, `helm-lint`
+     - Add required checks: `test`, `docker-build`, `helm-lint`
    - ✅ Require branches to be up to date before merging
    - ✅ Do not allow bypassing the above settings
 
@@ -44,7 +44,7 @@ This prevents deletion or modification of release tags once pushed.
 
 | Workflow | Trigger | Purpose |
 |----------|---------|---------|
-| `ci.yaml` | Push/PR to main | Runs typecheck, Docker build test, Helm lint |
+| `ci.yaml` | Push/PR to main | Runs tests, Docker build, Helm lint |
 | `publish.yaml` | Push `v*` tag | Validates version, publishes Docker & Helm to GHCR (requires approval) |
 | `release.yaml` | Push `v*` tag | Creates GitHub Release with changelog |
 

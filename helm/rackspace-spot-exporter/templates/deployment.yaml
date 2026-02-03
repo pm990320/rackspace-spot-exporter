@@ -39,8 +39,8 @@ spec:
           containerPort: {{ .Values.exporter.port }}
           protocol: TCP
         env:
-        - name: RACKSPACE_NAMESPACE
-          value: {{ .Values.rackspaceSpot.namespace | required "rackspaceSpot.namespace is required" | quote }}
+        - name: RACKSPACE_ORGANIZATION
+          value: {{ .Values.rackspaceSpot.organization | required "rackspaceSpot.organization is required" | quote }}
         - name: RACKSPACE_REFRESH_TOKEN
           valueFrom:
             secretKeyRef:

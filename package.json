@@ -8,11 +8,16 @@
     "start": "bun run index.ts",
     "dev": "bun run --watch index.ts",
     "generate-types": "bunx openapi-typescript openapi.yaml -o src/api-types.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "openapi-typescript": "^7.9.1"
+    "@vitest/coverage-v8": "^4.0.18",
+    "openapi-typescript": "^7.9.1",
+    "vitest": "^4.0.18"
   },
   "peerDependencies": {
     "typescript": "^5"
