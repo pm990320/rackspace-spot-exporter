@@ -17,6 +17,7 @@ export class RackspaceSpotCollector {
   // SpotNodePool metrics
   private spotNodePoolDesiredGauge: Gauge;
   private spotNodePoolWonCountGauge: Gauge;
+  private spotNodePoolAutoscalingInfoGauge: Gauge;
 
   // OnDemandNodePool metrics
   private onDemandNodePoolDesiredGauge: Gauge;
@@ -46,6 +47,21 @@ export class RackspaceSpotCollector {
       name: 'rackspace_spot_spotnodepool_won_count',
       help: 'Number of nodes won in a spot node pool',
       labelNames: ['namespace', 'cloudspace', 'nodepool', 'serverclass', 'bid_status'],
+      registers: [this.registry],
+    });
+
+    this.spotNodePoolAutoscalingInfoGauge = new Gauge({
+      name: 'rackspace_spot_spotnodepool_autoscaling_info',
+      help: 'Live autoscaling configuration for a spot node pool',
+      labelNames: [
+        'namespace',
+        'cloudspace',
+        'nodepool',
+        'serverclass',
+        'autoscaling_enabled',
+        'min_nodes',
+        'max_nodes',
+      ],
       registers: [this.registry],
     });
 
@@ -104,6 +120,10 @@ export class RackspaceSpotCollector {
   private async collectSpotNodePoolMetrics(): Promise<void> {
     const spotNodePools = await this.client.listSpotNodePools(this.organization);
 
+    // Configuration values are labels on one info series per pool. Clear old
+    // label sets first so a live configuration change cannot grow cardinality.
+    this.spotNodePoolAutoscalingInfoGauge.reset();
+
     if (!spotNodePools?.items) {
       return;
     }
@@ -115,6 +135,10 @@ export class RackspaceSpotCollector {
       const desired = pool.spec?.desired || 0;
       const wonCount = pool.status?.wonCount || 0;
       const bidStatus = pool.status?.bidStatus || 'unknown';
+      const autoscaling = pool.spec?.autoscaling;
+      const autoscalingEnabled = autoscaling?.enabled === true ? 'true' : 'false';
+      const minNodes = autoscaling?.minNodes?.toString() ?? 'unknown';
+      const maxNodes = autoscaling?.maxNodes?.toString() ?? 'unknown';
 
       // Set desired count
       this.spotNodePoolDesiredGauge.set(
@@ -137,6 +161,21 @@ export class RackspaceSpotCollector {
           bid_status: bidStatus,
         },
         wonCount
+      );
+
+      // Expose the API's configuration directly rather than inferring it from
+      // desired or won counts. The constant value makes this an info metric.
+      this.spotNodePoolAutoscalingInfoGauge.set(
+        {
+          namespace: this.organization,
+          cloudspace: cloudSpace,
+          nodepool: name,
+          serverclass: serverClass,
+          autoscaling_enabled: autoscalingEnabled,
+          min_nodes: minNodes,
+          max_nodes: maxNodes,
+        },
+        1
       );
     }
   }

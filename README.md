@@ -8,7 +8,7 @@ A Prometheus exporter for [Rackspace Spot](https://spot.rackspace.com) - a manag
 ## Features
 
 - **CloudSpace Metrics**: Monitor node counts across your Kubernetes clusters
-- **SpotNodePool Metrics**: Track bid status, desired vs. won nodes
+- **SpotNodePool Metrics**: Track bid status, desired vs. won nodes, and live autoscaling configuration
 - **OnDemandNodePool Metrics**: Monitor reserved node allocation
 - **Prometheus Operator Support**: ServiceMonitor, PodMonitor, and PrometheusRule CRDs
 - **Helm Chart**: Easy Kubernetes deployment with OCI registry support
@@ -111,6 +111,7 @@ See [values.yaml](helm/rackspace-spot-exporter/values.yaml) for all options.
 |--------|-------------|--------|
 | `rackspace_spot_spotnodepool_desired` | Desired node count | `namespace`, `cloudspace`, `nodepool`, `serverclass` |
 | `rackspace_spot_spotnodepool_won_count` | Nodes won in auction | `namespace`, `cloudspace`, `nodepool`, `serverclass`, `bid_status` |
+| `rackspace_spot_spotnodepool_autoscaling_info` | Live autoscaling enabled state and configured bounds (constant value `1`; absent bounds use `unknown`) | `namespace`, `cloudspace`, `nodepool`, `serverclass`, `autoscaling_enabled`, `min_nodes`, `max_nodes` |
 
 ### OnDemandNodePool Metrics
 
